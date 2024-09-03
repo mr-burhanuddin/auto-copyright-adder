@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { glob } from "glob";
 import { input } from "@inquirer/prompts";
-import simpleGit from "simple-git";
+import { simpleGit } from "simple-git";
 
 interface DeveloperDetails {
   developerName: string;
@@ -107,11 +107,12 @@ function generateCopyrightText(
   }
 }
 
-function addCopyrightToFile(
+async function addCopyrightToFile(
   filePath: string,
   developerName: string,
   purpose: string
-): void {
+): Promise<void> {
+  const git = simpleGit();
   const fileName = path.basename(filePath);
   const fileContent = fs.readFileSync(filePath, "utf8");
   const isNewFile = !fileContent.includes(
@@ -143,7 +144,13 @@ function addCopyrightToFile(
   }
 
   fs.writeFileSync(filePath, updatedContent, "utf8");
-  console.log(`Updated ${fileName}`);
+
+  // Stage the file after modification
+  await git.add(filePath).then(() => {
+    console.log(
+      `Added / Updated copyright to ${fileName} and staged the file.`
+    );
+  });
 }
 
 async function main() {
@@ -160,14 +167,14 @@ async function main() {
             /\.(ts|tsx|jsx|js|css)$/.test(file) && file !== "addCopyright.ts"
         );
 
-    stagedFiles.forEach((file) => {
+    for (const file of stagedFiles) {
       const fullPath = path.resolve(file);
       if (!fs.existsSync(fullPath)) {
         console.warn(`File not found: ${fullPath}`);
-        return;
+        continue;
       }
-      addCopyrightToFile(fullPath, developerName, purpose);
-    });
+      await addCopyrightToFile(fullPath, developerName, purpose);
+    }
   } else {
     console.warn("Developer Name And Purpose Can't Be Empty");
   }
