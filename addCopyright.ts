@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { input } from "@inquirer/prompts";
-import { simpleGit } from "simple-git";
+import simpleGit from "simple-git";
 
 interface DeveloperDetails {
   developerName: string;
@@ -128,18 +128,17 @@ function addCopyrightToFile(
   if (isNewFile) {
     updatedContent = `${copyrightText}\n${fileContent}`;
   } else {
-    const maintenanceHistoryIndex = fileContent.lastIndexOf(
-      "Maintenance History"
+    const endOfHistoryIndex = fileContent.lastIndexOf(
+      "-------------|----------|----------------------------------------------------"
     );
-    const historySectionIndex = fileContent.indexOf(
-      "-------------",
-      maintenanceHistoryIndex
-    );
-
+    const insertionPoint =
+      endOfHistoryIndex +
+      "-------------|----------|----------------------------------------------------"
+        .length;
     updatedContent =
-      fileContent.slice(0, historySectionIndex) +
+      fileContent.slice(0, insertionPoint) +
       copyrightText +
-      fileContent.slice(historySectionIndex);
+      fileContent.slice(insertionPoint);
   }
 
   fs.writeFileSync(filePath, updatedContent, "utf8");
